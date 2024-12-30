@@ -1,0 +1,8 @@
+{
+  "name": "node.std",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "AGPL-3.0-only",
+  "repository": "https://github.com/gitlab-az1/node.std.git",
+  "author": "gitlab-az1 <gitlab.az1@gmail.com>"
+}
