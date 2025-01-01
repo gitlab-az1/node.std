@@ -11,6 +11,13 @@ enum ERROR_CODE {
   ERR_INVALID_TYPE = 0x6,
   ERR_TOKEN_CANCELED = 0x7,
   ERR_TIMEOUT = 0x8,
+  ERR_AVOID_MODIFICATION = 0x9,
+  ERR_DIVISION_BY_ZERO = 0x10,
+  ERR_UNSUPPORTED_OPERATION = 0xA,
+  ERR_RESOURCE_NOT_FOUND = 0xB,
+  ERR_PATH_IS_A_FILE = 0xC,
+  ERR_PATH_IS_A_DIRECTORY = 0xD,
+  ERR_BUFFER_OVERFLOW = 0xE,
 }
 
 
@@ -94,4 +101,13 @@ export class Exception extends Error {
     this.context = options?.context;
     this.stackTrace = StackTraceCollector.create();
   }
+}
+
+
+export function isKnownError(err: any, code: ErrorCode | LooseAutocomplete<keyof typeof ERROR_CODE>): boolean {
+  if(!(code instanceof ErrorCode)) {
+    code = ErrorCode.for(code);
+  }
+
+  return typeof err === 'object' && typeof err.errorCode === 'number' && err.errorCode === code.getCode();
 }

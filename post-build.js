@@ -91,7 +91,10 @@ async function copyFolder(src, dest) {
 async function main() {
   // await recursiveRemoveDirectoryFiles(path.join(buildDir, 'types'));
   await recursiveRemoveUnnecessaryFiles(buildDir);
-  await fs.promises.unlink(path.join(buildDir, 'test.js'));
+
+  if(process.env.NODE_ENV !== 'test') {
+    // await fs.promises.unlink(path.join(buildDir, 'test.js'));
+  }
   
   if(fs.existsSync(path.join(buildDir, 'test.d.ts'))) {
     await fs.promises.unlink(path.join(buildDir, 'test.d.ts'));

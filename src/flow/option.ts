@@ -146,8 +146,8 @@ export abstract class OptionBody<T, TSome extends T> {
   }
 
   /** Unwraps and returns the value if Some, throws a custom error if None */
-  public unwrap_expect(): TSome {
-    return unwrapExpect(this.#option);
+  public unwrap_expect(message?: string): TSome {
+    return unwrapExpect(this.#option, message);
   }
 }
 

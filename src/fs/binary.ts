@@ -133,6 +133,8 @@ export function createBinaryReadStream(
   if(mask) {
     const transformStream = new Transform({
       transform(chunk, _, callback) {
+        if(token && token.isCancellationRequested) return callback(new Error('Token cancelled'));
+
         try {
           unmaskBuffer(chunk, chunkToBuffer(mask), { avoidBufferUtils: true, pad: true });
           callback(null, chunk);
@@ -151,13 +153,13 @@ export function createBinaryReadStream(
 
 export async function writeBinaryStream(
   filepath: fs.PathLike,
-  contents: K,
+  content: AsyncIterable<K> | Iterable<K>,
   mask?: K,
   token?: ICancellationToken // eslint-disable-line comma-dangle
-): Promise<void> {
+): Promise<number> {
   // log(`Starting streaming binary write: ${filepath}`);
 
-  return promises.withAsyncBody<void>(async (resolve, reject) => {
+  return promises.withAsyncBody<number>(async (resolve, reject) => {
     const ac = token ? new AbortController() : null;
 
     (token || CancellationToken.None).onCancellationRequested(() => {
@@ -165,25 +167,41 @@ export async function writeBinaryStream(
       reject(new Exception('Streaming file write was cancelled by token', 'ERR_TOKEN_CANCELED'));
     });
 
-    let buffer = chunkToBuffer(contents);
-
-    if(mask) {
-      const output = Buffer.alloc(buffer.length);
-      
-      maskBuffer(buffer, chunkToBuffer(mask), output, 0, buffer.length, { avoidBufferUtils: true, pad: true });
-      buffer = output;
-    }
-
     const stream = fs.createWriteStream(filepath, { signal: ac?.signal });
-    stream.write(buffer);
-    stream.end();
+    let writtenBytes: number = 0;
+
+    try {
+      for await (const chunk of content) {
+        let buffer = chunkToBuffer(chunk);
+
+        if(mask) {
+          const output = Buffer.alloc(buffer.length);
+          maskBuffer(buffer, chunkToBuffer(mask), output, 0, buffer.length, { avoidBufferUtils: true, pad: true });
+
+          buffer = output;
+        }
+
+        if(!stream.write(buffer)) {
+          await new Promise<void>((resolve, reject) => {
+            stream.once('drain', resolve);
+            stream.once('error', reject);
+          });
+        }
+
+        writtenBytes += buffer.byteLength;
+      }
+      
+      stream.end();
+    } catch (err: any) {
+      reject(err);
+    }
 
     stream.on('finish', () => {
       // log(`Completed streaming binary write: ${filepath}`);
-      resolve();
+      resolve(writtenBytes);
     });
 
-    stream.on('error', (err) => {
+    stream.on('error', err => {
       // log(`Error during streaming binary write: ${err.message}`);
       reject(err);
     });
