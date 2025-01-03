@@ -231,5 +231,92 @@ type DeepPartialObject<T> = {
  */
 export type MultidimensionalArray<T = number> = (T | MultidimensionalArray<T>)[];
 
+/**
+ * **Length** - Calculates the length of a string or array type.
+ *
+ * @template T - A string or array type.
+ * @template Counter - An internal counter for recursion.
+ *
+ * ### Example Usage:
+ * ```typescript
+ * type StrLength = Length<"Hello">; // 5
+ * type ArrayLength = Length<[1, 2, 3]>; // 3
+ * ```
+ */
+export type Length<
+  T extends string | any[],
+  Counter extends number[] = []
+> = T extends any[] ? T['length'] :
+  T extends `${string}${infer Tail}` ?
+    Length<Tail, [...Counter, 0]> :
+    Counter['length'];
 
-export { CancelablePromise, Thenable } from './async/promise';
+
+  
+/**
+ * **Compare** - Compares two numbers and returns their relative relationship.
+ *
+ * @template First - The first number.
+ * @template Second - The second number.
+ * @template Counter - Internal counter for recursion.
+ *
+ * ### Example Usage:
+ * ```typescript
+ * type Comparison = Compare<3, 5>; // 'less'
+ * ```
+ */
+export type Compare<
+  First extends number,
+  Second extends number,
+  Counter extends number[] = []
+> = First extends Second ?
+  'equal' :
+  Counter['length'] extends First ?
+  'less' :
+  Counter['length'] extends Second ?
+  'greater' :
+  Compare<First, Second, [...Counter, 0]>;
+
+
+/**
+ * **MaxLength** - Limits the length of a string type to a maximum value.
+ *
+ * @template T - The string type.
+ * @template Max - The maximum length of the string.
+ *
+ * ### Example Usage:
+ * ```typescript
+ * type MaxStr = MaxLength<'Hello', 5>; // 'Hello'
+ * ```
+ */
+export type MaxLength<T extends string, Max extends number> = Compare<Length<T>, Max> extends 'less' | 'equal' ? T : never;
+
+/**
+ * **MinLength** - Limits the length of a string type to a minimum value.
+ *
+ * @template T - The string type.
+ * @template Min - The minimum length of the string.
+ *
+ * ### Example Usage:
+ * ```typescript
+ * type MinStr = MinLength<'Hello', 3>; // 'Hello'
+ * ```
+ */
+export type MinLength<T extends string, Min extends number> = Compare<Min, Length<T>> extends 'less' | 'equal' ? T : never;
+
+/**
+ * **InRange** - Ensures a string's length is within a specified range.
+ *
+ * @template T - The string type.
+ * @template Min - The minimum length of the string.
+ * @template Max - The maximum length of the string.
+ *
+ * ### Example Usage:
+ * ```typescript
+ * type InRangeStr = InRange<'Hello', 3, 6>; // 'Hello'
+ * ```
+ */
+export type InRange<T extends string, Min extends number, Max extends number> = MinLength<T, Min> & MaxLength<T, Max>;
+
+
+export type { CancelablePromise, Thenable } from './async/promise';
