@@ -1,5 +1,5 @@
 {
-  "name": "node.std",
+  "name": "@ts-overflow/node.std",
   "version": "1.0.0",
   "main": "index.js",
   "license": "AGPL-3.0-only",
